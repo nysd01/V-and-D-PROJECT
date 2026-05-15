@@ -19,7 +19,7 @@ export default function FirmTabLayout(): React.JSX.Element {
 
     const redirectTimer = setTimeout(() => {
       if (!user) {
-        router.replace('/login');
+        router.replace('/');
         return;
       }
       if (user.type !== 'firm') {

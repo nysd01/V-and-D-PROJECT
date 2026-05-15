@@ -14,7 +14,7 @@ export default function TabLayout() {
 
   useEffect(() => {
     if (!user) {
-      const t = setTimeout(() => router.replace('/login'), 0);
+      const t = setTimeout(() => router.replace('/'), 0);
       return () => clearTimeout(t);
     }
   }, [router, user]);
