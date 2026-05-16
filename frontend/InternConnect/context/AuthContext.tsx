@@ -18,6 +18,7 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (data: Record<string, unknown>) => Promise<User>;
+  loginWithGoogle: (accessToken: string) => Promise<User>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
 }
@@ -81,6 +82,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (accessToken: string): Promise<User> => {
+    setIsLoading(true);
+    try {
+      const { token, user: apiUser } = await api.auth.googleLogin(accessToken);
+      setAuthToken(token);
+      const u = toUser(apiUser);
+      setUser(u);
+      return u;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setAuthToken(null);
     setUser(null);
@@ -92,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, loginWithGoogle, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -48,6 +48,49 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// POST /api/auth/google
+router.post('/google', async (req, res) => {
+  const { accessToken } = req.body;
+  if (!accessToken) return res.status(400).json({ error: 'accessToken required' });
+
+  try {
+    const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!googleRes.ok) return res.status(401).json({ error: 'Invalid Google token' });
+
+    const { email, name, picture } = await googleRes.json();
+    if (!email) return res.status(401).json({ error: 'Could not retrieve email from Google' });
+
+    const { data: existing } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    if (existing) {
+      return res.json({ token: makeToken(existing), user: safeUser(existing) });
+    }
+
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        email: email.toLowerCase().trim(),
+        password_hash: '',
+        name: name || email.split('@')[0],
+        type: 'intern',
+        profile_picture: picture || null,
+      })
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json({ token: makeToken(newUser), user: safeUser(newUser) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;

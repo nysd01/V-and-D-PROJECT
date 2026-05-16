@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -13,6 +13,17 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
+
+// ── Fill these in from Google Cloud Console ──────────────
+// https://console.cloud.google.com → APIs & Services → Credentials
+const GOOGLE_WEB_CLIENT_ID     = 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_ANDROID_CLIENT_ID = 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_IOS_CLIENT_ID     = 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com';
+// ─────────────────────────────────────────────────────────
 
 const { width } = Dimensions.get('window');
 
@@ -36,11 +47,38 @@ const IconSnowflake = () => <Image source={{ uri: SVG_SNOWFLAKE }} style={{ widt
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login, loginWithGoogle, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success' && response.authentication?.accessToken) {
+      handleGoogleToken(response.authentication.accessToken);
+    } else if (response?.type === 'error') {
+      Alert.alert('Google Sign-In Failed', response.error?.message || 'Please try again');
+    }
+  }, [response]);
+
+  const handleGoogleToken = async (accessToken: string) => {
+    setGoogleLoading(true);
+    try {
+      const loggedInUser = await loginWithGoogle(accessToken);
+      router.replace(loggedInUser.type === 'firm' ? '/(firm)/firm_dashboard' : '/(tabs)/intern_dashboard');
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Failed', error?.message || 'Please try again');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -143,8 +181,16 @@ export default function LoginPage() {
 
           {/* Social Buttons */}
           <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Text style={[styles.socialButtonText, { color: '#4285F4' }]}>Google</Text>
+            <TouchableOpacity
+              style={[styles.socialButton, (!request || googleLoading) && { opacity: 0.6 }]}
+              onPress={() => promptAsync()}
+              disabled={!request || googleLoading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#4285F4" />
+              ) : (
+                <Text style={[styles.socialButtonText, { color: '#4285F4' }]}>Google</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialButton}>
               <Text style={[styles.socialButtonText, { color: '#0A66C2' }]}>LinkedIn</Text>

@@ -100,6 +100,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    googleLogin: (accessToken: string) =>
+      request<{ token: string; user: ApiUser }>('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ accessToken }),
+      }),
   },
 
   internships: {
