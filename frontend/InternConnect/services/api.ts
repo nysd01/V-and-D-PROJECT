@@ -1,5 +1,10 @@
-// Change this to your machine's IP if testing on a physical device (e.g. http://192.168.1.X:3000/api)
-export const API_BASE = 'http://192.168.1.100:3000/api';
+import { Platform } from 'react-native';
+
+export const API_BASE = Platform.select({
+  web: 'http://localhost:3000/api',
+  android: 'http://10.0.2.2:3000/api',
+  ios: 'http://localhost:3000/api',
+});
 
 let authToken: string | null = null;
 
