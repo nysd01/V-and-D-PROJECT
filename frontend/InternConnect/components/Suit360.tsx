@@ -1,12 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { GLView } from 'expo-gl';
-import { Asset } from 'expo-asset';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
-const MODEL_ASSET = require('../assets/models/dark_spy_with_black__gold_detailed_mask.glb');
 
 function createMobileFallbackModel(): THREE.Group {
   const group = new THREE.Group();
@@ -92,51 +88,7 @@ export default function Suit360(): React.JSX.Element {
       rimLight.position.set(0, 2, -4);
       scene.add(rimLight);
 
-      let model: THREE.Object3D;
-
-      if (Platform.OS === 'web') {
-        const asset = Asset.fromModule(MODEL_ASSET);
-        await asset.downloadAsync();
-
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync(asset.localUri ?? asset.uri);
-        model = gltf.scene;
-
-        const bounds = new THREE.Box3().setFromObject(model);
-        const center = bounds.getCenter(new THREE.Vector3());
-        const size = bounds.getSize(new THREE.Vector3());
-        const maxSize = Math.max(size.x, size.y, size.z);
-        const scale = maxSize > 0 ? 2.7 / maxSize : 1;
-
-        model.position.sub(center);
-        model.scale.setScalar(scale);
-        model.rotation.x = -0.05;
-        model.rotation.y = Math.PI * 0.85;
-        model.position.y = -0.15;
-
-        model.traverse((child) => {
-          const mesh = child as THREE.Mesh;
-          if (mesh.isMesh) {
-            mesh.castShadow = false;
-            mesh.receiveShadow = false;
-            if (Array.isArray(mesh.material)) {
-              mesh.material.forEach((material) => {
-                if ('metalness' in material) {
-                  (material as THREE.MeshStandardMaterial).metalness = 0.7;
-                  (material as THREE.MeshStandardMaterial).roughness = 0.35;
-                }
-              });
-            } else if (mesh.material && 'metalness' in mesh.material) {
-              const material = mesh.material as THREE.MeshStandardMaterial;
-              material.metalness = 0.7;
-              material.roughness = 0.35;
-            }
-          }
-        });
-      } else {
-        // Native devices can OOM on very heavy GLB assets, so we use a light 3D fallback.
-        model = createMobileFallbackModel();
-      }
+      const model: THREE.Object3D = createMobileFallbackModel();
 
       scene.add(model);
       setStatus('ready');
