@@ -1,47 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { GLView } from 'expo-gl';
+import { Asset } from 'expo-asset';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-function createFallbackModel(): THREE.Group {
-  const group = new THREE.Group();
-
-  const head = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.95, 1),
-    new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.5, roughness: 0.45 })
-  );
-  group.add(head);
-
-  const goldStrip = new THREE.Mesh(
-    new THREE.TorusGeometry(0.72, 0.055, 16, 48),
-    new THREE.MeshStandardMaterial({ color: 0xd4a017, metalness: 0.9, roughness: 0.2 })
-  );
-  goldStrip.rotation.x = Math.PI / 2;
-  goldStrip.position.z = 0.08;
-  group.add(goldStrip);
-
-  const visor = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0, 0.2, 0.15),
-    new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.7, roughness: 0.25 })
-  );
-  visor.position.set(0, 0.05, 0.78);
-  group.add(visor);
-
-  const accentLeft = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 12, 12),
-    new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0x402400 })
-  );
-  accentLeft.position.set(-0.35, -0.1, 0.82);
-  group.add(accentLeft);
-
-  const accentRight = accentLeft.clone();
-  accentRight.position.x = 0.35;
-  group.add(accentRight);
-
-  group.position.y = -0.05;
-  return group;
-}
+const MODEL_ASSET = require('../assets/models/dark_spy_with_black__gold_detailed_mask.glb');
 
 export default function Suit360(): React.JSX.Element {
   const rafRef = useRef<number | null>(null);
@@ -88,7 +53,45 @@ export default function Suit360(): React.JSX.Element {
       rimLight.position.set(0, 2, -4);
       scene.add(rimLight);
 
-      const model = createFallbackModel();
+      const asset = Asset.fromModule(MODEL_ASSET);
+      await asset.downloadAsync();
+
+      const loader = new GLTFLoader();
+      const gltf = await loader.loadAsync(asset.localUri ?? asset.uri);
+      const model = gltf.scene;
+
+      const bounds = new THREE.Box3().setFromObject(model);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const size = bounds.getSize(new THREE.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+      const scale = maxSize > 0 ? 2.7 / maxSize : 1;
+
+      model.position.sub(center);
+      model.scale.setScalar(scale);
+      model.rotation.x = -0.05;
+      model.rotation.y = Math.PI * 0.85;
+      model.position.y = -0.15;
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((material) => {
+              if ('metalness' in material) {
+                (material as THREE.MeshStandardMaterial).metalness = 0.7;
+                (material as THREE.MeshStandardMaterial).roughness = 0.35;
+              }
+            });
+          } else if (mesh.material && 'metalness' in mesh.material) {
+            const material = mesh.material as THREE.MeshStandardMaterial;
+            material.metalness = 0.7;
+            material.roughness = 0.35;
+          }
+        }
+      });
+
       scene.add(model);
       setStatus('ready');
 
@@ -101,7 +104,7 @@ export default function Suit360(): React.JSX.Element {
 
       render();
     } catch (error) {
-      console.error('Failed to render 3D model:', error);
+      console.error('Failed to load 3D model:', error);
       setStatus('error');
     }
   };

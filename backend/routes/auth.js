@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const supabase = require('../db');
+const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -108,6 +109,52 @@ router.post('/login', async (req, res) => {
     if (!match) return res.status(401).json({ error: 'Incorrect password' });
 
     res.json({ token: makeToken(user), user: safeUser(user) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/auth/me — return current user from token
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single();
+
+    if (error || !user) return res.status(404).json({ error: 'User not found' });
+    res.json(safeUser(user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/auth/me — update current user's profile
+router.patch('/me', requireAuth, async (req, res) => {
+  const { name, university, companyName, industry, address, profile_picture } = req.body;
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (university !== undefined) updates.university = university;
+  if (companyName !== undefined) updates.company_name = companyName;
+  if (industry !== undefined) updates.industry = industry;
+  if (address !== undefined) updates.address = address;
+  if (profile_picture !== undefined) updates.profile_picture = profile_picture;
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(safeUser(data));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

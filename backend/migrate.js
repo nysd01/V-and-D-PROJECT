@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS applications (
   intern_id      BIGINT REFERENCES users(id) ON DELETE CASCADE,
   internship_id  BIGINT REFERENCES internships(id) ON DELETE CASCADE,
   cover_letter   TEXT,
+  document_url   TEXT,
   status         TEXT DEFAULT 'Pending'
                    CHECK (status IN ('Pending','Interviewing','Accepted','Rejected')),
   applied_at     TIMESTAMPTZ DEFAULT NOW(),

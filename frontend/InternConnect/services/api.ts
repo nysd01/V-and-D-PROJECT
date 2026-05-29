@@ -1,5 +1,8 @@
-// Change this to your machine's IP if testing on a physical device (e.g. http://192.168.1.X:3000/api)
-export const API_BASE = 'http://192.168.1.100:3000/api';
+// Set EXPO_PUBLIC_API_URL in your .env file, e.g.:
+//   EXPO_PUBLIC_API_URL=http://192.168.1.X:3000/api
+// Falls back to localhost for web/simulator development.
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
 
 let authToken: string | null = null;
 
@@ -104,6 +107,19 @@ export const api = {
       request<{ token: string; user: ApiUser }>('/auth/google', {
         method: 'POST',
         body: JSON.stringify({ accessToken }),
+      }),
+    me: () => request<ApiUser>('/auth/me'),
+    updateMe: (updates: {
+      name?: string;
+      university?: string;
+      companyName?: string;
+      industry?: string;
+      address?: string;
+      profile_picture?: string;
+    }) =>
+      request<ApiUser>('/auth/me', {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
       }),
   },
 

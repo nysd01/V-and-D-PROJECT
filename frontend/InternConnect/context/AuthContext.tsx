@@ -1,5 +1,8 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { api, setAuthToken, ApiUser } from '../services/api';
+
+const TOKEN_KEY = 'auth_token';
 
 export type User = {
   id: string;
@@ -21,6 +24,7 @@ export interface AuthContextType {
   loginWithGoogle: (accessToken: string) => Promise<User>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,57 +51,65 @@ function toUser(apiUser: ApiUser): User {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Restore session from storage on app launch
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+        if (token) {
+          setAuthToken(token);
+          const apiUser = await api.auth.me();
+          setUser(toUser(apiUser));
+        }
+      } catch {
+        try { await AsyncStorage.removeItem(TOKEN_KEY); } catch {}
+        setAuthToken(null);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
+
+  const persistToken = async (token: string) => {
+    setAuthToken(token);
+    try { await AsyncStorage.setItem(TOKEN_KEY, token); } catch {}
+  };
 
   const login = async (email: string, password: string): Promise<User> => {
-    setIsLoading(true);
-    try {
-      const { token, user: apiUser } = await api.auth.login(email, password);
-      setAuthToken(token);
-      const u = toUser(apiUser);
-      setUser(u);
-      return u;
-    } finally {
-      setIsLoading(false);
-    }
+    const { token, user: apiUser } = await api.auth.login(email, password);
+    await persistToken(token);
+    const u = toUser(apiUser);
+    setUser(u);
+    return u;
   };
 
   const register = async (data: Record<string, unknown>): Promise<User> => {
-    setIsLoading(true);
-    try {
-      // Normalize field names: register screen uses userType/fullName,
-      // backend expects type/name
-      const payload = {
-        ...data,
-        type: data.userType ?? data.type,
-        name: data.fullName ?? data.companyName ?? data.name,
-      };
-      const { token, user: apiUser } = await api.auth.register(payload);
-      setAuthToken(token);
-      const u = toUser(apiUser);
-      setUser(u);
-      return u;
-    } finally {
-      setIsLoading(false);
-    }
+    const payload = {
+      ...data,
+      type: data.userType ?? data.type,
+      name: data.fullName ?? data.companyName ?? data.name,
+    };
+    const { token, user: apiUser } = await api.auth.register(payload);
+    await persistToken(token);
+    const u = toUser(apiUser);
+    setUser(u);
+    return u;
   };
 
   const loginWithGoogle = async (accessToken: string): Promise<User> => {
-    setIsLoading(true);
-    try {
-      const { token, user: apiUser } = await api.auth.googleLogin(accessToken);
-      setAuthToken(token);
-      const u = toUser(apiUser);
-      setUser(u);
-      return u;
-    } finally {
-      setIsLoading(false);
-    }
+    const { token, user: apiUser } = await api.auth.googleLogin(accessToken);
+    await persistToken(token);
+    const u = toUser(apiUser);
+    setUser(u);
+    return u;
   };
 
-  const logout = () => {
+  const logout = async () => {
     setAuthToken(null);
     setUser(null);
+    try { await AsyncStorage.removeItem(TOKEN_KEY); } catch {}
   };
 
   const updateProfile = (updates: Partial<User>) => {
@@ -105,8 +117,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({ ...user, ...updates });
   };
 
+  const refreshUser = async () => {
+    try {
+      const apiUser = await api.auth.me();
+      setUser(toUser(apiUser));
+    } catch {
+      // Token expired or revoked — force logout
+      await logout();
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, loginWithGoogle, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, loginWithGoogle, logout, updateProfile, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
