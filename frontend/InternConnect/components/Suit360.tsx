@@ -4,7 +4,11 @@ import { GLView } from 'expo-gl';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
 
+<<<<<<< HEAD
 function createFallbackModel(): THREE.Group {
+=======
+function createMobileFallbackModel(): THREE.Group {
+>>>>>>> f38a4fe1f2d41d095fc2dff45aac3c3c3ff455cc
   const group = new THREE.Group();
 
   const head = new THREE.Mesh(
@@ -88,7 +92,12 @@ export default function Suit360(): React.JSX.Element {
       rimLight.position.set(0, 2, -4);
       scene.add(rimLight);
 
+<<<<<<< HEAD
       const model = createFallbackModel();
+=======
+      const model: THREE.Object3D = createMobileFallbackModel();
+
+>>>>>>> f38a4fe1f2d41d095fc2dff45aac3c3c3ff455cc
       scene.add(model);
       setStatus('ready');
 

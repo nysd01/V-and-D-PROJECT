@@ -1,8 +1,18 @@
+<<<<<<< HEAD
 // Set EXPO_PUBLIC_API_URL in your .env file, e.g.:
 //   EXPO_PUBLIC_API_URL=http://192.168.1.X:3000/api
 // Falls back to localhost for web/simulator development.
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+=======
+import { Platform } from 'react-native';
+
+export const API_BASE = Platform.select({
+  web: 'http://localhost:3000/api',
+  android: 'http://10.0.2.2:3000/api',
+  ios: 'http://localhost:3000/api',
+});
+>>>>>>> f38a4fe1f2d41d095fc2dff45aac3c3c3ff455cc
 
 let authToken: string | null = null;
 
