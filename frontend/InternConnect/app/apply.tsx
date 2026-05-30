@@ -13,7 +13,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { api, ApiInternship } from '@/services/api';
+import { api, uploadDocument, ApiInternship } from '@/services/api';
 
 interface NavItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -120,9 +120,17 @@ export default function ApplyPage(): React.JSX.Element {
     
     try {
       setSubmitting(true);
-      // Use work sample file URI if available, otherwise use resume file URI
-      const documentUrl = workSampleFile?.uri || resumeFile?.uri || null;
-      const result = await api.applications.create(internship.id, coverLetter, documentUrl || undefined);
+      // Upload whichever file was picked to Supabase Storage first
+      let documentUrl: string | undefined;
+      const fileToUpload = workSampleFile || resumeFile;
+      if (fileToUpload) {
+        documentUrl = await uploadDocument(
+          fileToUpload.uri,
+          fileToUpload.name ?? 'document.pdf',
+          fileToUpload.mimeType ?? 'application/pdf'
+        );
+      }
+      const result = await api.applications.create(internship.id, coverLetter, documentUrl);
       
       // Create success notification
       try {

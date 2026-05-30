@@ -11,9 +11,12 @@ const TYPE_COLORS = {
   alert: { bg: '#FEF2F2', icon: '#DC2626' },
 };
 
+type FilterTab = 'All' | 'Unread' | 'Applications';
+
 export default function Notifications(): React.JSX.Element {
   const router = useRouter();
   const [notifs, setNotifs] = useState<ApiNotification[]>([]);
+  const [activeTab, setActiveTab] = useState<FilterTab>('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,6 +37,14 @@ export default function Notifications(): React.JSX.Element {
   }, [fetchNotifications]);
 
   const unreadCount = useMemo(() => notifs.filter((n) => !n.read).length, [notifs]);
+
+  const visible = useMemo(() => {
+    if (activeTab === 'Unread') return notifs.filter((n) => !n.read);
+    if (activeTab === 'Applications') return notifs.filter((n) =>
+      ['success', 'warning', 'alert'].includes(n.type)
+    );
+    return notifs;
+  }, [notifs, activeTab]);
 
   const markAsRead = (id: number | string) => {
     setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
@@ -60,15 +71,17 @@ export default function Notifications(): React.JSX.Element {
         </View>
 
         <View style={styles.filterTabs}>
-          <TouchableOpacity style={styles.filterTab}>
-            <Text style={styles.filterTabActive}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterTab}>
-            <Text style={styles.filterTabText}>Unread</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterTab}>
-            <Text style={styles.filterTabText}>Applications</Text>
-          </TouchableOpacity>
+          {(['All', 'Unread', 'Applications'] as FilterTab[]).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.filterTab, activeTab === tab && styles.filterTabActiveStyle]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Text style={activeTab === tab ? styles.filterTabActive : styles.filterTabText}>
+                {tab}{tab === 'Unread' && unreadCount > 0 ? ` (${unreadCount})` : ''}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {loading ? (
@@ -82,9 +95,9 @@ export default function Notifications(): React.JSX.Element {
               <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
           </View>
-        ) : notifs.length > 0 ? (
+        ) : visible.length > 0 ? (
           <View style={styles.notificationsContainer}>
-            {notifs.map((notification) => (
+            {visible.map((notification) => (
               <NotificationCard
                 key={String(notification.id)}
                 notification={notification}
@@ -159,6 +172,7 @@ const styles = StyleSheet.create({
   headerBtn: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center' },
   filterTabs: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   filterTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#F1F5F9' },
+  filterTabActiveStyle: { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
   filterTabActive: { fontSize: 13, fontWeight: '600', color: '#2563EB' },
   filterTabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   notificationsContainer: { paddingHorizontal: 16, paddingVertical: 12, gap: 10 },

@@ -61,6 +61,8 @@ router.get('/posting/:internship_id', requireAuth, async (req, res) => {
       id: a.id,
       status: a.status,
       cover_letter: a.cover_letter,
+      document_url: a.document_url ?? null,
+      interview_scheduled_at: a.interview_scheduled_at ?? null,
       applied_at: a.applied_at,
       intern_id: a.users?.id,
       name: a.users?.name ?? '',
@@ -101,14 +103,13 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/applications/:id/status — firm updates application status
+// PATCH /api/applications/:id/status — firm updates application status + optional interview time
 router.patch('/:id/status', requireAuth, async (req, res) => {
   if (req.user.type !== 'firm') return res.status(403).json({ error: 'Firms only' });
-  const { status } = req.body;
+  const { status, interview_scheduled_at } = req.body;
   const valid = ['Pending', 'Interviewing', 'Accepted', 'Rejected'];
   if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
   try {
-    // Verify the application belongs to one of this firm's internships
     const { data: app } = await supabase
       .from('applications')
       .select('id, internships!internship_id(firm_id)')
@@ -119,9 +120,12 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
+    const updates = { status };
+    if (interview_scheduled_at !== undefined) updates.interview_scheduled_at = interview_scheduled_at;
+
     const { data, error } = await supabase
       .from('applications')
-      .update({ status })
+      .update(updates)
       .eq('id', req.params.id)
       .select()
       .single();

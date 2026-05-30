@@ -1,0 +1,39 @@
+services:
+
+  # ── Backend API ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: internconnect-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - internconnect-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Frontend Web ───────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend/InternConnect
+      dockerfile: Dockerfile
+    container_name: internconnect-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - internconnect-net
+
+networks:
+  internconnect-net:
+    driver: bridge

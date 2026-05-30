@@ -130,13 +130,18 @@ export default function Dashboard(): React.JSX.Element {
         </View>
 
         {recentApps.length > 0 ? recentApps.map((application) => (
-          <ApplicationRow
+          <TouchableOpacity
             key={application.id}
-            company={application.company_name || application.firm_name || 'Company'}
-            role={application.title}
-            status={application.status}
-            date={new Date(application.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          />
+            onPress={() => router.push('/(tabs)/myapplications')}
+            activeOpacity={0.7}
+          >
+            <ApplicationRow
+              company={application.company_name || application.firm_name || 'Company'}
+              role={application.title}
+              status={application.status}
+              date={new Date(application.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            />
+          </TouchableOpacity>
         )) : (
           <View style={styles.emptyBlock}>
             <Text style={styles.emptyText}>No applications yet.</Text>

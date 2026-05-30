@@ -1,18 +1,14 @@
-<<<<<<< HEAD
-// Set EXPO_PUBLIC_API_URL in your .env file, e.g.:
-//   EXPO_PUBLIC_API_URL=http://192.168.1.X:3000/api
-// Falls back to localhost for web/simulator development.
-export const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
-=======
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 
-export const API_BASE = Platform.select({
-  web: 'http://localhost:3000/api',
-  android: 'http://10.0.2.2:3000/api',
-  ios: 'http://localhost:3000/api',
-});
->>>>>>> f38a4fe1f2d41d095fc2dff45aac3c3c3ff455cc
+// EXPO_PUBLIC_API_URL in .env overrides everything (best for physical devices).
+// Falls back to platform-appropriate localhost address.
+export const API_BASE: string =
+  process.env.EXPO_PUBLIC_API_URL ??
+  Platform.select({
+    android: 'http://10.0.2.2:3000/api',
+    default: 'http://localhost:3000/api',
+  });
 
 let authToken: string | null = null;
 
@@ -87,6 +83,8 @@ export interface ApiApplicant {
   university: string;
   profile_picture?: string;
   cover_letter: string;
+  document_url?: string | null;
+  interview_scheduled_at?: string | null;
   status: 'Pending' | 'Interviewing' | 'Accepted' | 'Rejected';
   applied_at: string;
 }
@@ -117,6 +115,16 @@ export const api = {
       request<{ token: string; user: ApiUser }>('/auth/google', {
         method: 'POST',
         body: JSON.stringify({ accessToken }),
+      }),
+    forgotPassword: (email: string) =>
+      request<{ message: string; code: string }>('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
+    resetPassword: (email: string, code: string, newPassword: string) =>
+      request<{ message: string }>('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email, code, newPassword }),
       }),
     me: () => request<ApiUser>('/auth/me'),
     updateMe: (updates: {
@@ -174,13 +182,21 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ internship_id, cover_letter, document_url: document_url || null }),
       }),
-    updateStatus: (id: number | string, status: string) =>
+    updateStatus: (id: number | string, status: string, interview_scheduled_at?: string | null) =>
       request<ApiApplicant>(`/applications/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...(interview_scheduled_at !== undefined && { interview_scheduled_at }) }),
       }),
     withdraw: (id: number | string) =>
       request<{ success: boolean }>(`/applications/${id}`, { method: 'DELETE' }),
+  },
+
+  saved: {
+    list: () => request<number[]>('/saved'),
+    save: (internshipId: number | string) =>
+      request<{ saved: boolean }>(`/saved/${internshipId}`, { method: 'POST' }),
+    unsave: (internshipId: number | string) =>
+      request<{ saved: boolean }>(`/saved/${internshipId}`, { method: 'DELETE' }),
   },
 
   notifications: {
@@ -192,3 +208,29 @@ export const api = {
       }),
   },
 };
+
+// Read file as base64 then POST as JSON — avoids all multipart/native-URI issues on Android
+async function base64Upload(endpoint: string, fileUri: string, mimeType: string, fileName?: string): Promise<string> {
+  const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding: 'base64' } as any);
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ base64, mimeType, fileName: fileName ?? 'file' }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
+  return data.url as string;
+}
+
+export function uploadDocument(fileUri: string, fileName: string, mimeType: string): Promise<string> {
+  return base64Upload('/upload/document', fileUri, mimeType, fileName);
+}
+
+export function uploadAvatar(fileUri: string, fileName: string, mimeType: string): Promise<string> {
+  return base64Upload('/upload/avatar', fileUri, mimeType, fileName);
+}

@@ -20,9 +20,10 @@ WebBrowser.maybeCompleteAuthSession();
 
 // ── Fill these in from Google Cloud Console ──────────────
 // https://console.cloud.google.com → APIs & Services → Credentials
-const GOOGLE_WEB_CLIENT_ID     = 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com';
-const GOOGLE_IOS_CLIENT_ID     = 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID     ?? '';
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '';
+const GOOGLE_IOS_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID     ?? '';
+const GOOGLE_CONFIGURED        = Boolean(GOOGLE_WEB_CLIENT_ID && !GOOGLE_WEB_CLIENT_ID.includes('YOUR_'));
 // ─────────────────────────────────────────────────────────
 
 const { width } = Dimensions.get('window');
@@ -54,11 +55,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-  });
+  const [request, response, promptAsync] = Google.useAuthRequest(
+    {
+      clientId: GOOGLE_WEB_CLIENT_ID,
+      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+      iosClientId: GOOGLE_IOS_CLIENT_ID,
+    },
+    { useProxy: true }
+  );
 
   useEffect(() => {
     if (response?.type === 'success' && response.authentication?.accessToken) {
@@ -154,7 +158,7 @@ export default function LoginPage() {
               </View>
               <Text style={styles.rememberMeText}>Remember me</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/forgot_password')}>
               <Text style={styles.forgotPassword}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
@@ -182,18 +186,21 @@ export default function LoginPage() {
           {/* Social Buttons */}
           <View style={styles.socialButtons}>
             <TouchableOpacity
-              style={[styles.socialButton, (!request || googleLoading) && { opacity: 0.6 }]}
-              onPress={() => promptAsync()}
-              disabled={!request || googleLoading}
+              style={[styles.socialButton, (!GOOGLE_CONFIGURED || !request || googleLoading) && { opacity: 0.6 }]}
+              onPress={() => {
+                if (!GOOGLE_CONFIGURED) {
+                  Alert.alert('Not configured', 'Google sign-in is not set up yet. Use email/password login.');
+                  return;
+                }
+                promptAsync();
+              }}
+              disabled={googleLoading}
             >
               {googleLoading ? (
                 <ActivityIndicator size="small" color="#4285F4" />
               ) : (
                 <Text style={[styles.socialButtonText, { color: '#4285F4' }]}>Google</Text>
               )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <Text style={[styles.socialButtonText, { color: '#0A66C2' }]}>LinkedIn</Text>
             </TouchableOpacity>
           </View>
 

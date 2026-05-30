@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 import { api, ApiInternship } from '../../services/api';
 
 const FILTERS = ['All', 'Paid', 'Remote', 'Hybrid', 'In-person'];
@@ -33,6 +34,7 @@ interface CardProps {
 
 export default function Browse(): React.JSX.Element {
   const router = useRouter();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [saved, setSaved] = useState<Record<number, boolean>>({});
   const [selectedFilter, setSelectedFilter] = useState('All');
@@ -44,21 +46,39 @@ export default function Browse(): React.JSX.Element {
     setLoading(true);
     setError('');
     try {
-      const data = await api.internships.list(search, selectedFilter);
+      const [data, savedIds] = await Promise.all([
+        api.internships.list(search, selectedFilter),
+        user?.type === 'intern' ? api.saved.list().catch(() => [] as number[]) : Promise.resolve([] as number[]),
+      ]);
       setInternships(data);
+      const map: Record<number, boolean> = {};
+      savedIds.forEach((id) => { map[id] = true; });
+      setSaved(map);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load internships');
     } finally {
       setLoading(false);
     }
-  }, [search, selectedFilter]);
+  }, [search, selectedFilter, user]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
     return () => clearTimeout(timer);
   }, [fetchData]);
 
-  const toggleSave = (id: number) => setSaved((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleSave = async (id: number) => {
+    const isSaved = !!saved[id];
+    setSaved((prev) => ({ ...prev, [id]: !isSaved }));
+    try {
+      if (isSaved) {
+        await api.saved.unsave(id);
+      } else {
+        await api.saved.save(id);
+      }
+    } catch {
+      setSaved((prev) => ({ ...prev, [id]: isSaved }));
+    }
+  };
 
   return (
     <View style={styles.container}>

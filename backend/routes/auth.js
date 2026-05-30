@@ -114,6 +114,65 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password — generate a reset code
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'email is required' });
+  try {
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    if (!user) return res.status(404).json({ error: 'No account found for this email' });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+    await supabase
+      .from('users')
+      .update({ reset_token: code, reset_token_expires: expires })
+      .eq('id', user.id);
+
+    // In production you would email the code. For now we return it directly.
+    res.json({ message: 'Reset code generated', code });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/reset-password — verify code and set new password
+router.post('/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: 'email, code and newPassword are required' });
+  }
+  try {
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, reset_token, reset_token_expires')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    if (!user) return res.status(404).json({ error: 'No account found' });
+    if (user.reset_token !== code) return res.status(400).json({ error: 'Invalid reset code' });
+    if (!user.reset_token_expires || new Date(user.reset_token_expires) < new Date()) {
+      return res.status(400).json({ error: 'Reset code has expired' });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await supabase
+      .from('users')
+      .update({ password_hash: hash, reset_token: null, reset_token_expires: null })
+      .eq('id', user.id);
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/auth/me — return current user from token
 router.get('/me', requireAuth, async (req, res) => {
   try {

@@ -33,6 +33,7 @@ function AppNavigator() {
         <Stack.Screen name="apply" />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
+        <Stack.Screen name="forgot_password" />
         <Stack.Screen name="index" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
