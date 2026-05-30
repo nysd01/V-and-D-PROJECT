@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: internconnect
+  labels:
+    app: backend
+    tier: api
+spec:
+  replicas: 2                          # Run 2 instances for high availability
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate                # Zero-downtime deployments
+    rollingUpdate:
+      maxSurge: 1                      # Allow 1 extra pod during update
+      maxUnavailable: 0                # Never take pods down before new ones are ready
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: api
+    spec:
+      containers:
+        - name: backend
+          image: v-and-d-project-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: internconnect-config
+                  key: PORT
+            - name: SUPABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: internconnect-secret
+                  key: SUPABASE_URL
+            - name: SUPABASE_SERVICE_ROLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: internconnect-secret
+                  key: SUPABASE_SERVICE_ROLE_KEY
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: internconnect-secret
+                  key: JWT_SECRET
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:               # Restart pod if unhealthy
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:              # Only send traffic when ready
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+      restartPolicy: Always

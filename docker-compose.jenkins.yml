@@ -1,0 +1,25 @@
+services:
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: internconnect-jenkins
+    restart: unless-stopped
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"       # Jenkins web UI
+      - "50000:50000"     # Jenkins agent communication
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock   # Allow Jenkins to run Docker commands
+    environment:
+      - JAVA_OPTS=-Xmx512m
+    networks:
+      - jenkins-net
+
+volumes:
+  jenkins_home:
+
+networks:
+  jenkins-net:
+    driver: bridge

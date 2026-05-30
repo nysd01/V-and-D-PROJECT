@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: internconnect-ingress
+  namespace: internconnect
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"     # Allow large file uploads
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"   # Long timeout for uploads
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: internconnect.local        # Change to your domain in production
+      http:
+        paths:
+          # All API requests → backend service
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3000
+          # All other requests → frontend service
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: internconnect
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend                       # Routes traffic to pods with label app=backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000                       # Service port (internal K8s DNS)
+      targetPort: 3000                 # Pod port
+  type: ClusterIP                      # Internal only — accessed via Ingress or frontend

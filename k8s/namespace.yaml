@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: internconnect
+  labels:
+    app: internconnect
+    environment: production
