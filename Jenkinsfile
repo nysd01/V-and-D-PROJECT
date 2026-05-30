@@ -28,7 +28,7 @@ pipeline {
             steps {
                 echo '📦 Installing backend dependencies...'
                 dir('backend') {
-                    sh 'npm ci --only=production'
+                    sh 'npm install'
                 }
             }
         }
