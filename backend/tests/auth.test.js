@@ -5,6 +5,12 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 const request = require('supertest');
 const express = require('express');
 
+// Mock bcrypt so the native binary is never loaded (Windows vs Linux ELF issue)
+jest.mock('bcrypt', () => ({
+  hash:    jest.fn().mockResolvedValue('$hashed$'),
+  compare: jest.fn().mockResolvedValue(true),
+}));
+
 // ── Supabase mock ──────────────────────────────────────────────────────────────
 const mockSingle = jest.fn();
 const mockSelect = jest.fn();
