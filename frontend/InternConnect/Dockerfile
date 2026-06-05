@@ -8,7 +8,7 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-ENV EXPO_PUBLIC_API_URL=http://38.242.246.126/api
+ENV EXPO_PUBLIC_API_URL=http://38.242.246.126:30070/api
 
 RUN npx expo export --platform web --output-dir dist
 
