@@ -140,7 +140,7 @@ pipeline {
                 echo '❤️ Running post-deployment health check...'
                 sh '''
                     sleep 10
-                    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:30080/api/health)
+                    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:30070/api/health)
                     if [ "$STATUS" = "200" ]; then
                         echo "✅ Health check passed — API is responding"
                     else
