@@ -11,6 +11,7 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 7000                       # Service port (internal K8s DNS)
-      targetPort: 7000                 # Pod port
-  type: ClusterIP                      # Internal only — accessed via Ingress or frontend
+      port: 7000
+      targetPort: 7000
+      nodePort: 30070
+  type: NodePort

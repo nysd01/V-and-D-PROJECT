@@ -4,24 +4,21 @@ metadata:
   name: internconnect-ingress
   namespace: internconnect
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/proxy-body-size: "20m"     # Allow large file uploads
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"   # Long timeout for uploads
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
-    - host: internconnect.local        # Change to your domain in production
-      http:
+    - http:
         paths:
-          # All API requests → backend service
           - path: /api
             pathType: Prefix
             backend:
               service:
                 name: backend-service
                 port:
-                  number: 3000
-          # All other requests → frontend service
+                  number: 7000
           - path: /
             pathType: Prefix
             backend:
