@@ -78,6 +78,7 @@ pipeline {
                         -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
                         -t ${BACKEND_IMAGE}:latest \
                         ./backend
+                    docker save ${BACKEND_IMAGE}:latest | k3s ctr images import -
                 """
             }
         }
@@ -91,6 +92,7 @@ pipeline {
                         -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
                         -t ${FRONTEND_IMAGE}:latest \
                         ./frontend/InternConnect
+                    docker save ${FRONTEND_IMAGE}:latest | k3s ctr images import -
                 """
             }
         }
