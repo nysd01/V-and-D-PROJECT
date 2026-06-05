@@ -85,7 +85,7 @@ export default function FirmProfile(): React.JSX.Element {
   const confirmLogout = () => {
     Alert.alert('Logout', 'Do you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => { logout(); router.replace('/login'); } },
+      { text: 'Logout', style: 'destructive', onPress: async () => { await logout(); router.replace('/login'); } },
     ]);
   };
 
