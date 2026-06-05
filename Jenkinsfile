@@ -108,7 +108,7 @@ pipeline {
         // ── Stage 9: Deploy to Kubernetes ──────────────────────────────────
         stage('Deploy to Kubernetes') {
             when {
-                branch 'main'           // Only deploy from main branch
+                branch 'deployment'
             }
             steps {
                 echo '🚀 Deploying to Kubernetes cluster...'
@@ -134,7 +134,7 @@ pipeline {
         // ── Stage 10: Health Check ─────────────────────────────────────────
         stage('Health Check') {
             when {
-                branch 'main'
+                branch 'deployment'
             }
             steps {
                 echo '❤️ Running post-deployment health check...'
