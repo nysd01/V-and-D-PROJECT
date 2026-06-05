@@ -4,32 +4,13 @@ metadata:
   name: internconnect-ingress
   namespace: internconnect
   annotations:
-    # Use websecure (port 443) instead of web
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    
-    # Enable Let's Encrypt certificate generation
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certResolver: letsencrypt
-    
-    # Your existing annotations (keep these)
+    traefik.ingress.kubernetes.io/router.entrypoints: web
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
 spec:
   ingressClassName: traefik
-  tls:
-    - hosts:
-        - batchit.duckdns.org
-        - pickmydish.duckdns.org
-        - peer-tutoring.duckdns.org
-        - careernavigator.duckdns.org
-        - fruitcollector.duckdns.org
-        - gridsurvival.duckdns.org
-        - healthassistance.duckdns.org
-        # Add all your domains here
-      secretName: internconnect-tls  # This secret will be auto-created by cert-manager
   rules:
-    - host: batchit.duckdns.org  # Add this!
-      http:
+    - http:
         paths:
           - path: /api
             pathType: Prefix
@@ -45,4 +26,3 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
-    # Add other domains as separate rules or use wildcards
