@@ -25,9 +25,9 @@ spec:
       containers:
         - name: backend
           image: v-and-d-project-backend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
           ports:
-            - containerPort: 3000
+            - containerPort: 7000
               name: http
           env:
             - name: PORT
@@ -60,14 +60,14 @@ spec:
           livenessProbe:               # Restart pod if unhealthy
             httpGet:
               path: /api/health
-              port: 3000
+              port: 7000
             initialDelaySeconds: 15
             periodSeconds: 20
             failureThreshold: 3
           readinessProbe:              # Only send traffic when ready
             httpGet:
               path: /api/health
-              port: 3000
+              port: 7000
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
