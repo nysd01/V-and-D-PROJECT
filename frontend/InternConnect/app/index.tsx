@@ -111,6 +111,9 @@ export default function LandingPage() {
             <Text style={s.brandName}>InternConnect</Text>
           </View>
           <View style={s.headerActions}>
+            <TouchableOpacity onPress={() => router.push('/about')}>
+              <Text style={s.loginLink}>About</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/login')}>
               <Text style={s.loginLink}>Log in</Text>
             </TouchableOpacity>
@@ -282,6 +285,9 @@ export default function LandingPage() {
               <Text style={s.ftLink}>How it Works</Text>
               <Text style={s.ftLink}>Pricing</Text>
               <Text style={s.ftLink}>Success Stories</Text>
+              <TouchableOpacity onPress={() => router.push('/about')}>
+                <Text style={[s.ftLink, { color: C.mint }]}>About Us</Text>
+              </TouchableOpacity>
             </View>
             <View style={s.ftCol}>
               <Text style={s.ftHead}>SUPPORT</Text>
