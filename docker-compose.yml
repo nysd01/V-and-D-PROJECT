@@ -27,7 +27,7 @@ services:
     container_name: internconnect-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "4910:80"
     depends_on:
       backend:
         condition: service_healthy
