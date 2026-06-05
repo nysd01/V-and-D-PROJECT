@@ -261,6 +261,16 @@ export default function Profile(): React.JSX.Element {
 
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>Account</Text>
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/about')}>
+            <View style={[styles.settingIcon, { backgroundColor: '#EFF6FF' }]}>
+              <Ionicons name="information-circle-outline" size={20} color="#2563EB" />
+            </View>
+            <View style={styles.settingContent}>
+              <Text style={styles.settingTitle}>About Us</Text>
+              <Text style={styles.settingSubtitle}>Meet the team behind InternConnect</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>
             <View style={[styles.settingIcon, { backgroundColor: '#FEF2F2' }]}>
               <Ionicons name="log-out-outline" size={20} color="#DC2626" />
