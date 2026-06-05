@@ -8,8 +8,7 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# API proxied through nginx — use localhost since browser calls this from outside Docker
-ENV EXPO_PUBLIC_API_URL=http://localhost:3000/api
+ENV EXPO_PUBLIC_API_URL=http://38.242.246.126/api
 
 RUN npx expo export --platform web --output-dir dist
 
