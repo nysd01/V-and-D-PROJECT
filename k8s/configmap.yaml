@@ -4,7 +4,7 @@ metadata:
   name: internconnect-config
   namespace: internconnect
 data:
-  PORT: "3000"
+  PORT: "7000"
   NODE_ENV: "production"
-  # Frontend API URL — uses K8s service discovery (backend-service)
-  EXPO_PUBLIC_API_URL: "http://backend-service:3000/api"
+  # Frontend API URL — points to VPS backend
+  EXPO_PUBLIC_API_URL: "http://38.242.246.126:7000/api"

@@ -6,8 +6,8 @@ import * as FileSystem from 'expo-file-system';
 export const API_BASE: string =
   process.env.EXPO_PUBLIC_API_URL ??
   Platform.select({
-    android: 'http://10.0.2.2:3000/api',
-    default: 'http://localhost:3000/api',
+    android: 'http://10.0.2.2:7000/api',
+    default: 'http://localhost:7000/api',
   });
 
 let authToken: string | null = null;
