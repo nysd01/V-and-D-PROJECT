@@ -90,7 +90,7 @@ export default function Profile(): React.JSX.Element {
     }
   };
 
-  const handleLogout = () => { logout(); router.replace('/login'); };
+  const handleLogout = async () => { await logout(); router.replace('/login'); };
 
   const totalApps   = apps.length;
   const accepted    = apps.filter((a) => a.status === 'Accepted').length;
