@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -9,7 +9,7 @@ type ApplicantCard = ApiApplicant & { postingTitle: string };
 
 export default function FirmDashboard(): React.JSX.Element {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [postings, setPostings] = useState<ApiInternship[]>([]);
   const [applicants, setApplicants] = useState<ApplicantCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,20 @@ export default function FirmDashboard(): React.JSX.Element {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleLogout = async () => {
+    Alert.alert('Logout', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/');
+        },
+      },
+    ]);
+  };
 
   const activePostings = useMemo(() => postings.filter((posting) => posting.status === 'active').length, [postings]);
   const totalApplicants = applicants.length;
@@ -72,9 +86,14 @@ export default function FirmDashboard(): React.JSX.Element {
             </View>
             <Text style={styles.brand}>InternConnect</Text>
           </View>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/notifications')}>
-            <Ionicons name="notifications-outline" size={26} color="#6B7280" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/notifications')}>
+              <Ionicons name="notifications-outline" size={26} color="#6B7280" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.logoutIconBtn} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.hero}>
@@ -147,6 +166,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F7FB' },
   scrollContent: { paddingBottom: 100 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  logoutIconBtn: { padding: 8, borderRadius: 8, backgroundColor: '#FEE2E2' },
   brandWrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   brandIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E6EEF9', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   brandIconImage: { width: '100%', height: '100%' },
