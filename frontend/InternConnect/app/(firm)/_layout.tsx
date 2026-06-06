@@ -16,18 +16,13 @@ export default function FirmTabLayout(): React.JSX.Element {
 
   useEffect(() => {
     if (!mounted) return;
-
-    const redirectTimer = setTimeout(() => {
-      if (!user) {
-        router.replace('/login');
-        return;
-      }
-      if (user.type !== 'firm') {
-        router.replace('/(tabs)/intern_dashboard');
-      }
-    }, 0);
-
-    return () => clearTimeout(redirectTimer);
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+    if (user.type !== 'firm') {
+      router.replace('/(tabs)/intern_dashboard');
+    }
   }, [mounted, router, user]);
 
   if (!mounted) {
