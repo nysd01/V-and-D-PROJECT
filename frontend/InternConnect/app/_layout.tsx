@@ -13,7 +13,7 @@ export const unstable_settings = {
 
 function AppNavigator() {
   const colorScheme = useColorScheme();
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -26,16 +26,25 @@ function AppNavigator() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(firm)" />
-        <Stack.Screen name="(company)" />
-        <Stack.Screen name="internship_detail" />
-        <Stack.Screen name="apply" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="forgot_password" />
-        <Stack.Screen name="index" />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        {!user ? (
+          // Unauthenticated screens
+          <>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="forgot_password" />
+          </>
+        ) : (
+          // Authenticated screens
+          <>
+            {user.type === 'intern' && <Stack.Screen name="(tabs)" />}
+            {user.type === 'firm' && <Stack.Screen name="(firm)" />}
+            <Stack.Screen name="(company)" />
+            <Stack.Screen name="internship_detail" />
+            <Stack.Screen name="apply" />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </>
+        )}
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
